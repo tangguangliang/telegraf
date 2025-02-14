@@ -273,14 +273,13 @@ func (p *Procstat) gatherOld(acc telegraf.Accumulator) error {
 				for k, v := range r.Tags {
 					proc.setTag(k, v)
 				}
-
 				if p.ProcessName != "" {
 					proc.setTag("process_name", p.ProcessName)
 				}
 				p.processes[pid] = proc
 			}
 			running[pid] = true
-			metrics, err := proc.metrics(p.Prefix, &p.cfg, now)
+			metrics, err := proc.metrics(p.Prefix, &p.cfg, now, true)
 			if err != nil {
 				// Continue after logging an error as there might still be
 				// metrics available
@@ -293,9 +292,18 @@ func (p *Procstat) gatherOld(acc telegraf.Accumulator) error {
 	}
 
 	// Cleanup processes that are not running anymore
-	for pid := range p.processes {
+	for pid, proc := range p.processes {
 		if !running[pid] {
-			delete(p.processes, pid)
+			//delete(p.processes, pid)
+			metrics, err := proc.metrics(p.Prefix, &p.cfg, now, false)
+			if err != nil {
+				// Continue after logging an error as there might still be
+				// metrics available
+				acc.AddError(err)
+			}
+			for _, m := range metrics {
+				acc.AddMetric(m)
+			}
 		}
 	}
 
@@ -314,6 +322,7 @@ func (p *Procstat) gatherOld(acc telegraf.Accumulator) error {
 			tags[key] = value
 		}
 	}
+
 	if len(p.SupervisorUnits) > 0 {
 		tags["supervisor_unit"] = strings.Join(p.SupervisorUnits, ";")
 	}
@@ -384,7 +393,7 @@ func (p *Procstat) gatherNew(acc telegraf.Accumulator) error {
 					p.processes[pid] = process
 				}
 				running[pid] = true
-				metrics, err := process.metrics(p.Prefix, &p.cfg, now)
+				metrics, err := process.metrics(p.Prefix, &p.cfg, now, true)
 				if err != nil {
 					// Continue after logging an error as there might still be
 					// metrics available

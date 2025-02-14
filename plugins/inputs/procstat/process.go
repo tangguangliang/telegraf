@@ -20,7 +20,7 @@ type process interface {
 	MemoryMaps(bool) (*[]gopsprocess.MemoryMapsStat, error)
 	pid() pid
 	setTag(string, string)
-	metrics(string, *collectionConfig, time.Time) ([]telegraf.Metric, error)
+	metrics(string, *collectionConfig, time.Time, bool) ([]telegraf.Metric, error)
 }
 
 type pidFinder interface {
@@ -69,7 +69,7 @@ func (p *proc) percent(_ time.Duration) (float64, error) {
 }
 
 // Add metrics a single process
-func (p *proc) metrics(prefix string, cfg *collectionConfig, t time.Time) ([]telegraf.Metric, error) {
+func (p *proc) metrics(prefix string, cfg *collectionConfig, t time.Time, flag bool) ([]telegraf.Metric, error) {
 	if prefix != "" {
 		prefix += "_"
 	}
@@ -115,10 +115,13 @@ func (p *proc) metrics(prefix string, cfg *collectionConfig, t time.Time) ([]tel
 		fields[prefix+"disk_read_bytes"] = io.ReadBytes
 		fields[prefix+"disk_write_bytes"] = io.WriteBytes
 	}
-
-	createdAt, err := p.CreateTime() // returns epoch in ms
-	if err == nil {
-		fields[prefix+"created_at"] = createdAt * 1000000 // ms to ns
+	if flag {
+		createdAt, err := p.CreateTime() // returns epoch in ms
+		if err == nil {
+			fields[prefix+"created_at"] = createdAt * 1000000 // ms to ns
+		}
+	} else {
+		fields[prefix+"created_at"] = 0
 	}
 
 	if cfg.features["cpu"] {
