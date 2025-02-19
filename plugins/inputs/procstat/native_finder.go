@@ -129,3 +129,25 @@ func (*NativeFinder) pattern(pattern string) ([]pid, error) {
 	}
 	return pids, err
 }
+func (*NativeFinder) exePattern(exe string, pattern string) ([]pid, error) {
+	var pids []pid
+	regxPattern, err := regexp.Compile(pattern)
+	if err != nil {
+		return pids, err
+	}
+	procs, err := fastProcessList()
+	if err != nil {
+		return pids, err
+	}
+	for _, p := range procs {
+		name, err := processName(p)
+		if err != nil {
+			// skip, this can be caused by the pid no longer exists, or you don't have permissions to access it
+			continue
+		}
+		if regxPattern.MatchString(name) {
+			pids = append(pids, pid(p.Pid))
+		}
+	}
+	return pids, err
+}

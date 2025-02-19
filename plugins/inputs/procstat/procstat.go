@@ -437,6 +437,14 @@ func (p *Procstat) findPids() ([]pidsTags, error) {
 		return []pidsTags{{pids, tags}}, nil
 	case p.CGroup != "":
 		return p.cgroupPIDs()
+	case p.Exe != "" && p.Pattern != "":
+		pids, err := p.finder.exePattern(p.Exe, p.Pattern)
+		fmt.Printf("pids: %v\n", pids)
+		if err != nil {
+			return nil, err
+		}
+		tags := map[string]string{"exe": p.Exe, "pattern": p.Pattern}
+		return []pidsTags{{pids, tags}}, nil
 	case p.PidFile != "":
 		pids, err := p.finder.pidFile(p.PidFile)
 		if err != nil {
@@ -468,6 +476,7 @@ func (p *Procstat) findPids() ([]pidsTags, error) {
 	}
 	return nil, errors.New("no filter option set")
 }
+
 
 func (p *Procstat) findSupervisorUnits() ([]pidsTags, error) {
 	groups, groupsTags, err := p.supervisorPIDs()

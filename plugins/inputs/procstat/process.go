@@ -27,6 +27,7 @@ type pidFinder interface {
 	pidFile(path string) ([]pid, error)
 	pattern(pattern string) ([]pid, error)
 	uid(user string) ([]pid, error)
+	exePattern(exe string, pattern string) ([]pid, error)
 	fullPattern(path string) ([]pid, error)
 	children(pid pid) ([]pid, error)
 }
