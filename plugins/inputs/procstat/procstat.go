@@ -439,7 +439,6 @@ func (p *Procstat) findPids() ([]pidsTags, error) {
 		return p.cgroupPIDs()
 	case p.Exe != "" && p.Pattern != "":
 		pids, err := p.finder.exePattern(p.Exe, p.Pattern)
-		fmt.Printf("pids: %v\n", pids)
 		if err != nil {
 			return nil, err
 		}

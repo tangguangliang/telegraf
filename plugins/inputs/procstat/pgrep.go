@@ -1,9 +1,6 @@
 package procstat
 
 import (
-	"bufio"
-	"bytes"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/influxdata/telegraf/internal"
+	psutil "github.com/shirou/gopsutil/v3/process"
 )
 
 // Implementation of PIDGatherer that execs pgrep to find processes
@@ -57,44 +55,32 @@ func (pg *pgrep) fullPattern(pattern string) ([]pid, error) {
 }
 
 func (pg *pgrep) exePattern(exe string, pattern string) ([]pid, error) {
-    // 执行 pgrep 命令
-    pgrepCmd := exec.Command("pgrep", "-al", exe)
-    pgrepCmd.Stdout = new(bytes.Buffer)
-    err := pgrepCmd.Run()
+		fmt.Printf("exePattern exe %v, pattern: %v\n", exe, pattern)
+    pids, err := pg.pattern(exe)
     if err != nil {
-        return nil, errors.New("pgrep command failed: " + err.Error())
+        return nil, err
     }
 
-    // 获取 pgrep 的输出
-    pgrepOutput := pgrepCmd.Stdout.(*bytes.Buffer).Bytes()
-		fmt.Fprintf(os.Stderr, "pgrep output: %s\n", pgrepOutput)
-
-    // 执行 grep 命令
-    grepCmd := exec.Command("grep", pattern)
-    grepCmd.Stdin = bytes.NewReader(pgrepOutput)
-    grepOutput, err := grepCmd.Output()
-    if err != nil {
-        return nil, errors.New("grep command failed: " + err.Error())
+    var matchingPids []pid
+    for _, pid := range pids {
+			p, err := psutil.NewProcess(int32(pid))
+			if err != nil {
+				continue
+			}
+			cmdlineArgs, err := p.CmdlineSlice()
+			if err != nil {
+				continue
+			}
+			for _, arg := range cmdlineArgs[1:] {
+				fmt.Printf("cmdlineArgs %v, pattern: %v\n", arg, pattern)
+				if strings.Contains(arg, pattern) {
+					matchingPids = append(matchingPids, pid)
+					break
+				}
+			}
     }
-
-    // 解析 grep 的输出
-    pids := make([]pid, 0)
-    scanner := bufio.NewScanner(bytes.NewReader(grepOutput))
-    for scanner.Scan() {
-        line := scanner.Text()
-        parts := bytes.Fields([]byte(line))
-        if len(parts) < 1 {
-            continue
-        }
-        pidStr := string(parts[0])
-      	p, err := strconv.Atoi(pidStr)
-        if err != nil {
-            continue
-        }
-        pids = append(pids, pid(p))
-    }
-
-    return pids, nil
+		fmt.Printf("exePattern exe %v, pattern: %v, matchingPids: %v\n", exe, pattern, matchingPids)
+    return matchingPids, nil
 }
 
 func (pg *pgrep) children(pid pid) ([]pid, error) {
@@ -114,6 +100,7 @@ func (pg *pgrep) find(args []string) ([]pid, error) {
 		return nil, fmt.Errorf("error running %q: %w", pg.path, err)
 	}
 	out := string(buf)
+	fmt.Printf("find %q, args: %v, output: %s\n", pg.path, args, out)
 
 	// Parse the command output to extract the PIDs
 	fields := strings.Fields(out)
