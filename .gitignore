@@ -2,6 +2,7 @@
 /build
 /etc/telegraf.conf
 /telegraf
+/telegraf.zip
 /telegraf.exe
 /telegraf.gz
 /tools/package_lxd_test/package_lxd_test

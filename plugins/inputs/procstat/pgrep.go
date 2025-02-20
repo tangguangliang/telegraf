@@ -56,7 +56,8 @@ func (pg *pgrep) fullPattern(pattern string) ([]pid, error) {
 
 func (pg *pgrep) exePattern(exe string, pattern string) ([]pid, error) {
 		fmt.Printf("exePattern exe %v, pattern: %v\n", exe, pattern)
-    pids, err := pg.pattern(exe)
+		args := []string{"-x", exe}
+    pids, err := pg.find(args)
     if err != nil {
         return nil, err
     }
