@@ -40,7 +40,7 @@ func (*pgrep) pidFile(path string) ([]pid, error) {
 }
 
 func (pg *pgrep) pattern(pattern string) ([]pid, error) {
-	args := []string{pattern}
+	args := []string{"-x", pattern}
 	return pg.find(args)
 }
 
@@ -56,8 +56,7 @@ func (pg *pgrep) fullPattern(pattern string) ([]pid, error) {
 
 func (pg *pgrep) exePattern(exe string, pattern string) ([]pid, error) {
 		fmt.Printf("exePattern exe %v, pattern: %v\n", exe, pattern)
-		args := []string{"-x", exe}
-    pids, err := pg.find(args)
+    pids, err := pg.pattern(exe)
     if err != nil {
         return nil, err
     }
