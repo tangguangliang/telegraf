@@ -55,7 +55,6 @@ func (pg *pgrep) fullPattern(pattern string) ([]pid, error) {
 }
 
 func (pg *pgrep) exePattern(exe string, pattern string) ([]pid, error) {
-		fmt.Printf("exePattern exe %v, pattern: %v\n", exe, pattern)
     pids, err := pg.pattern(exe)
     if err != nil {
         return nil, err
@@ -72,14 +71,12 @@ func (pg *pgrep) exePattern(exe string, pattern string) ([]pid, error) {
 				continue
 			}
 			for _, arg := range cmdlineArgs[1:] {
-				fmt.Printf("cmdlineArgs %v, pattern: %v\n", arg, pattern)
 				if strings.Contains(arg, pattern) {
 					matchingPids = append(matchingPids, pid)
 					break
 				}
 			}
     }
-		fmt.Printf("exePattern exe %v, pattern: %v, matchingPids: %v\n", exe, pattern, matchingPids)
     return matchingPids, nil
 }
 
@@ -99,9 +96,8 @@ func (pg *pgrep) find(args []string) ([]pid, error) {
 		}
 		return nil, fmt.Errorf("error running %q: %w", pg.path, err)
 	}
+	
 	out := string(buf)
-	fmt.Printf("find %q, args: %v, output: %s\n", pg.path, args, out)
-
 	// Parse the command output to extract the PIDs
 	fields := strings.Fields(out)
 	pids := make([]pid, 0, len(fields))
