@@ -3,6 +3,7 @@ package procstat
 import (
 	"fmt"
 	"os"
+	"log"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -55,29 +56,50 @@ func (pg *pgrep) fullPattern(pattern string) ([]pid, error) {
 }
 
 func (pg *pgrep) exePattern(exe string, pattern string) ([]pid, error) {
-    pids, err := pg.pattern(exe)
-    if err != nil {
-        return nil, err
-    }
+	log.Printf("I! [pgrep] exePattern exe: %v, pattern: %v", exe, pattern)
+	pids, err := pg.pattern(exe)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("I! [pgrep] exePattern pids: %v", pids)
+	var matchingPids []pid
+	for _, pid := range pids {
+		p, err := psutil.NewProcess(int32(pid))
+		if err != nil {
+			continue
+		}
+		// 获取父ID，如果父ID已经在matchingPids中，则说明该进程为子进程，需要继续查找
+		// parentID, err := p.Ppid()
+		// log.Printf("I! [pgrep] exePattern pid: %v, parentID: %v", pid, parentID)
+		// if err != nil {
+		// 	continue
+		// }
+		// // 判断parentID是否在matchingPids中
+    // isChild := false
+    // for _, mp := range matchingPids {
+		// 	if int32(mp) == parentID {
+		// 			isChild = true
+		// 			break
+		// 	}
+    // }
+    // if isChild {
+		// 	log.Printf("I! [pgrep] exePattern process %v is a child process, skipping", pid)
+		// 	continue
+    // }
 
-    var matchingPids []pid
-    for _, pid := range pids {
-			p, err := psutil.NewProcess(int32(pid))
-			if err != nil {
-				continue
-			}
-			cmdlineArgs, err := p.CmdlineSlice()
-			if err != nil {
-				continue
-			}
-			for _, arg := range cmdlineArgs[1:] {
-				if strings.Contains(arg, pattern) {
-					matchingPids = append(matchingPids, pid)
-					break
-				}
-			}
-    }
-    return matchingPids, nil
+		cmdlineStr, err := p.Cmdline()
+		log.Printf("I! [pgrep] exePattern cmdlineStr: %v", cmdlineStr)
+		if err != nil {
+			log.Printf("I! [pgrep] exePattern not found cmdlineStr: %v", err)
+			continue
+		}
+		// 如果cmdlineStr中包含pattern，则匹配成功
+		if strings.Contains(cmdlineStr, pattern) {
+			matchingPids = append(matchingPids, pid)
+		}
+	}
+	log.Printf("I! [pgrep] exePattern matchingPids: %v", matchingPids)
+	return matchingPids, nil
 }
 
 func (pg *pgrep) children(pid pid) ([]pid, error) {
@@ -96,7 +118,7 @@ func (pg *pgrep) find(args []string) ([]pid, error) {
 		}
 		return nil, fmt.Errorf("error running %q: %w", pg.path, err)
 	}
-	
+
 	out := string(buf)
 	// Parse the command output to extract the PIDs
 	fields := strings.Fields(out)
