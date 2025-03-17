@@ -291,11 +291,3 @@ func init() {
 		return &Proxmox{}
 	})
 }
-
-func init() {
-	inputs.Add("proxmox", func() telegraf.Input {
-		return &Proxmox{
-			requestFunction: performRequest,
-		}
-	})
-}

@@ -37,6 +37,7 @@ type NetResponse struct {
 	Send        string          `toml:"send"`
 	Expect      string          `toml:"expect"`
 	Protocol    string          `toml:"protocol"`
+	Labels      map[string]string        `toml:"labels"`
 }
 
 func (*NetResponse) SampleConfig() string {
@@ -107,6 +108,9 @@ func (n *NetResponse) Gather(acc telegraf.Accumulator) error {
 
 	// Merge the tags
 	for k, v := range returnTags {
+		tags[k] = v
+	}
+	for k, v := range n.Labels {
 		tags[k] = v
 	}
 	// Add metrics

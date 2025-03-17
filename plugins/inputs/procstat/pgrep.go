@@ -68,24 +68,6 @@ func (pg *pgrep) exePattern(exe string, pattern string) ([]pid, error) {
 		if err != nil {
 			continue
 		}
-		// 获取父ID，如果父ID已经在matchingPids中，则说明该进程为子进程，需要继续查找
-		// parentID, err := p.Ppid()
-		// log.Printf("I! [pgrep] exePattern pid: %v, parentID: %v", pid, parentID)
-		// if err != nil {
-		// 	continue
-		// }
-		// // 判断parentID是否在matchingPids中
-    // isChild := false
-    // for _, mp := range matchingPids {
-		// 	if int32(mp) == parentID {
-		// 			isChild = true
-		// 			break
-		// 	}
-    // }
-    // if isChild {
-		// 	log.Printf("I! [pgrep] exePattern process %v is a child process, skipping", pid)
-		// 	continue
-    // }
 
 		cmdlineStr, err := p.Cmdline()
 		log.Printf("I! [pgrep] exePattern cmdlineStr: %v", cmdlineStr)

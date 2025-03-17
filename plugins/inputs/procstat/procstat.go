@@ -31,27 +31,28 @@ var execCommand = exec.Command
 type pid int32
 
 type Procstat struct {
-	PidFinder              string          `toml:"pid_finder"`
-	PidFile                string          `toml:"pid_file"`
-	Exe                    string          `toml:"exe"`
-	Pattern                string          `toml:"pattern"`
-	Prefix                 string          `toml:"prefix"`
-	CmdLineTag             bool            `toml:"cmdline_tag" deprecated:"1.29.0;1.40.0;use 'tag_with' instead"`
-	ProcessName            string          `toml:"process_name"`
-	User                   string          `toml:"user"`
-	SystemdUnit            string          `toml:"systemd_unit"`
-	SupervisorUnit         []string        `toml:"supervisor_unit" deprecated:"1.29.0;1.40.0;use 'supervisor_units' instead"`
-	SupervisorUnits        []string        `toml:"supervisor_units"`
-	IncludeSystemdChildren bool            `toml:"include_systemd_children"`
-	CGroup                 string          `toml:"cgroup"`
-	PidTag                 bool            `toml:"pid_tag" deprecated:"1.29.0;1.40.0;use 'tag_with' instead"`
-	WinService             string          `toml:"win_service"`
-	Mode                   string          `toml:"mode"`
-	Properties             []string        `toml:"properties"`
-	SocketProtocols        []string        `toml:"socket_protocols"`
-	TagWith                []string        `toml:"tag_with"`
-	Filter                 []filter        `toml:"filter"`
-	Log                    telegraf.Logger `toml:"-"`
+	PidFinder              string            `toml:"pid_finder"`
+	PidFile                string            `toml:"pid_file"`
+	Exe                    string            `toml:"exe"`
+	Pattern                string            `toml:"pattern"`
+	Prefix                 string            `toml:"prefix"`
+	CmdLineTag             bool              `toml:"cmdline_tag" deprecated:"1.29.0;1.40.0;use 'tag_with' instead"`
+	ProcessName            string            `toml:"process_name"`
+	User                   string            `toml:"user"`
+	SystemdUnit            string            `toml:"systemd_unit"`
+	SupervisorUnit         []string          `toml:"supervisor_unit" deprecated:"1.29.0;1.40.0;use 'supervisor_units' instead"`
+	SupervisorUnits        []string          `toml:"supervisor_units"`
+	IncludeSystemdChildren bool              `toml:"include_systemd_children"`
+	CGroup                 string            `toml:"cgroup"`
+	PidTag                 bool              `toml:"pid_tag" deprecated:"1.29.0;1.40.0;use 'tag_with' instead"`
+	WinService             string            `toml:"win_service"`
+	Mode                   string            `toml:"mode"`
+	Properties             []string          `toml:"properties"`
+	SocketProtocols        []string          `toml:"socket_protocols"`
+	TagWith                []string          `toml:"tag_with"`
+	Labels                 map[string]string `toml:"labels"`
+	Filter                 []filter          `toml:"filter"`
+	Log                    telegraf.Logger   `toml:"-"`
 
 	finder    pidFinder
 	processes map[pid]process
@@ -235,6 +236,10 @@ func (p *Procstat) gatherOld(acc telegraf.Accumulator) error {
 				tags[key] = value
 			}
 		}
+		// Add labels to tags
+		for key, value := range p.Labels {
+			tags[key] = value
+		}
 		acc.AddFields("procstat_lookup", fields, tags, now)
 		return err
 	}
@@ -272,6 +277,11 @@ func (p *Procstat) gatherOld(acc telegraf.Accumulator) error {
 				// Add initial tags
 				for k, v := range r.Tags {
 					proc.setTag(k, v)
+				}
+
+				// Add labels to tags
+				for key, value := range p.Labels {
+					proc.setTag(key, value)
 				}
 
 				if p.ProcessName != "" {
@@ -313,6 +323,10 @@ func (p *Procstat) gatherOld(acc telegraf.Accumulator) error {
 		for key, value := range pidTag.Tags {
 			tags[key] = value
 		}
+	}
+	// Add labels to tags
+	for key, value := range p.Labels {
+		tags[key] = value
 	}
 	if len(p.SupervisorUnits) > 0 {
 		tags["supervisor_unit"] = strings.Join(p.SupervisorUnits, ";")
@@ -371,6 +385,12 @@ func (p *Procstat) gatherNew(acc telegraf.Accumulator) error {
 					for k, v := range g.tags {
 						tags[k] = v
 					}
+
+					// Add labels to tags
+					for key, value := range p.Labels {
+						tags[key] = value
+					}
+
 					if p.ProcessName != "" {
 						process.setTag("process_name", p.ProcessName)
 					}
