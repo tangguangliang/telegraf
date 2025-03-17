@@ -35,9 +35,42 @@ See the [CONFIGURATION.md][CONFIGURATION.md] for more details.
     ## the telegraf.service systemd service.
     # use_sudo = false
 
+    ## Add number of entries and number of individual IPs (resolve CIDR syntax) for each ipset
+    # count_per_ip_entries = false
+
     ## The default timeout of 1s for ipset execution can be overridden here:
     # timeout = "1s"
+```
 
+### Permissions
+
+There are 3 ways to grant telegraf the right to run ipset:
+
+- Run as root (strongly discouraged)
+- Use sudo
+- Configure systemd to run telegraf with CAP_NET_ADMIN and CAP_NET_RAW
+  capabilities
+
+#### Using sudo
+
+To use sudo set the `use_sudo` option to `true` and update your sudoers file:
+
+```bash
+$ visudo
+# Add the following line:
+Cmnd_Alias IPSETSAVE = /sbin/ipset save
+telegraf  ALL=(root) NOPASSWD: IPSETSAVE
+Defaults!IPSETSAVE !logfile, !syslog, !pam_session
+```
+
+#### Using systemd capabilities
+
+You may run `systemctl edit telegraf.service` and add the following:
+
+```text
+[Service]
+CapabilityBoundingSet=CAP_NET_RAW CAP_NET_ADMIN
+AmbientCapabilities=CAP_NET_RAW CAP_NET_ADMIN
 ```
 
 ### Permissions

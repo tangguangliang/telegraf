@@ -16,6 +16,7 @@ import (
 )
 
 type process interface {
+type process interface {
 	Name() (string, error)
 	MemoryMaps(bool) (*[]gopsprocess.MemoryMapsStat, error)
 	pid() pid

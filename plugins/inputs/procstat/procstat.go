@@ -472,6 +472,7 @@ func (p *Procstat) findPids() ([]pidsTags, error) {
 		}
 		tags := map[string]string{"user": p.User}
 		return []pidsTags{{pids, tags}}, nil
+		return []pidsTags{{pids, tags}}, nil
 	}
 	return nil, errors.New("no filter option set")
 }
