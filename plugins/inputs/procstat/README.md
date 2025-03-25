@@ -104,7 +104,7 @@ See the [CONFIGURATION.md][CONFIGURATION.md] for more details.
   ## platform.  Default is 'pgrep'
   # pid_finder = "pgrep"
 
-  [[inputs.procstat.labels]]
+  [inputs.procstat.labels]
     server_id = "server1"
     location = "us-west"
 
